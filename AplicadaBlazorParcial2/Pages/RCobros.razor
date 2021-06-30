@@ -1,0 +1,309 @@
+﻿@page "/Cobros"
+@page "/Cobros/{CobroId:int}"
+@inject IToastService toast
+
+@using Blazored.Toast.Services
+@using AplicadaBlazorParcial2.Models
+@using AplicadaBlazorParcial2.BLL
+
+<div class="shadow-lg p-3 mb-5 bg-white rounded">
+
+    <EditForm Model="cobros" OnValidSubmit="Guardar">
+        <DataAnnotationsValidator />
+        <div class="card">
+
+            <div class="card-header">
+                <h3>Registro de Cobro</h3>
+            </div>
+
+            <div class="card-body">
+                <form>
+                    <div class="form-row align-items-center">
+                        <div class="col">
+                            <div class="form-group">
+                                <label>Id</label>
+                                <div class="input-group">
+                                    <InputNumber @bind-Value="cobros.CobroId" class="form-control" />
+                                    <div class="input-group-append">
+                                        <button type="button" style="z-index:0" class="btn btn-secondary" @onclick="Buscar">Buscar</button>
+                                    </div>
+                                    <ValidationMessage For="@(() => cobros.CobroId)" />
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    @*Fecha*@
+                    <div class="form-group">
+                        <label>Fecha</label>
+                        <InputDate @bind-Value="cobros.Fecha" class="form-control" />
+                        <ValidationMessage For="@(() => cobros.Fecha)" />
+                    </div>
+
+                </form>
+
+                @*Cliente*@
+                <div class="form-group">
+                    <label>Clientes</label>
+                    <select value="@cobros.ClienteId" class="form-control" @onchange="BuscarFacturaPerdiente">
+                        <option value="0" disabled selected>Seleccione un cliente</option>
+                        @foreach (var item in listCliente)
+                        {
+        <option value="@item.ClienteId">@item.Nombres</option>}
+                    </select>
+                </div>
+
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-body">
+                <div class="table-responsive text-nowrap" style="position: relative; height:200px; overflow: auto; display: block;">
+                    <table class="table table-striped">
+                        <thead class="thead-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Fecha</th>
+                                <th>Monto</th>
+                                <th>Balance</th>
+                                <th>Cobrado</th>
+                                <th>Pagar</th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white">
+
+                            @foreach (var item in cobros.cobrosDetalles)
+                            {
+            <tr>
+                <td>@item.VentaId</td>
+                <td>@item.Venta.Fecha.ToString("dd/MM/yyyy")</td>
+                <td>@item.Venta.Monto.ToString("N2")</td>
+                <td>@item.Venta.Balance.ToString("N2")</td>
+                <td>@item.Cobrado.ToString("N2")</td>
+                <td> <input type="checkbox" @onchange="@(() => CotejoCobrar(item))" /> </td>
+            </tr>}
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <div class=" form-group form-inline">
+                <div class="form-group col-6">
+                    <label>Totales</label>
+                    <span class="form-control">@cobros.ConteoCobro</span>
+                </div>
+
+                <div class="form-group col-6">
+                    <label>Cobro Total</label>
+                    <InputNumber @bind-Value="cobros.TotalesCobro" class="form-control" readOnly="true" />
+                    <ValidationMessage For="@(() => cobros.Cobro)" />
+                </div>
+            </div>
+
+            <div class="form-group ">
+                <label>Observaciones</label>
+                <textarea @bind="cobros.Observacion" class="form-control" row="5" placeholder="Observacion" />
+            </div>
+
+            <div class="card-footer">
+                <div class="form-group text-center">
+                    <div class="form-group text-center">
+                        <button type="button" class="btn btn-primary" @onclick="Nuevo">Nuevo</button>
+                        <button type="submit" class="btn btn-success">Guardar</button>
+                        <button type="button" class="btn btn-danger" @onclick="Eliminar">Eliminar</button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </EditForm>
+
+</div>
+
+
+@code { [Inject]
+            public CobrosBLL cobrosBLL { get; set; }
+
+            [Inject]
+            public VentasBLL ventasBLL { get; set; }
+
+            [Inject]
+            public ClientesBLL clientesBLL { get; set; }
+
+            [Parameter]
+            public int CobroId { get; set; }
+            private Cobros cobros = new Cobros();
+            private Ventas ventas = new Ventas();
+            private Clientes clientes = new Clientes();
+            private CobrosDetalles detalle = new CobrosDetalles();
+
+            List<Clientes> listCliente = new List<Clientes>();
+            List<Ventas> listVenta = new List<Ventas>();
+
+            protected override async void OnInitialized()
+            {
+                listVenta = await ventasBLL.GetVentas();
+                listCliente = await clientesBLL.GetClientes();
+
+                Limpiar();
+                await BuscarVentasCobradas();
+            }
+
+            private async void Buscar()
+            {
+
+
+                var cobro = await cobrosBLL.Buscar(cobros.CobroId);
+                if (cobro != null)
+                {
+                    //cobro.cobrosDetalles = await ventasBLL.GetVentasPagada(cobro.ClienteId);
+                    this.cobros = cobro;
+
+
+                }
+                else
+                {
+                    toast.ShowInfo("No se encontro el registro deseado.");
+                }
+            }
+
+            private async Task BuscarFacturaPerdiente(ChangeEventArgs arg)
+            {
+
+                listVenta = await ventasBLL.GetList(v => v.ClienteId == cobros.ClienteId);
+
+                cobros.ClienteId = int.Parse(arg.Value.ToString());
+
+                if (cobros.CobroId >= 0)
+                    cobros.cobrosDetalles = await ventasBLL.GetVentasPorPagar(cobros.ClienteId);
+
+            }
+
+            private void Nuevo()
+            {
+                Limpiar();
+            }
+
+            private async void Guardar()
+            {
+                if (!Validacion())
+                    return;
+
+                cobros.CobroId = this.CobroId;
+                cobros.cobrosDetalles.RemoveAll(d => d.Cobrado == 0);
+                if (await cobrosBLL.Guardar(cobros))
+                {
+                    toast.ShowSuccess("Guardado.");
+                    Limpiar();
+                }
+                else
+                {
+                    toast.ShowError("Error al guardar el registro.");
+                }
+            }
+
+            public bool Validacion()
+            {
+                if (cobros.cobrosDetalles.Count == 0)
+                {
+                    toast.ShowInfo("No hay cobro marcado.");
+                    return false;
+                }
+
+                return true;
+            }
+
+            private async void Eliminar()
+            {
+                this.CobroId = cobros.CobroId;
+                if (await cobrosBLL.Eliminar(cobros.CobroId))
+                {
+                    toast.ShowSuccess("Eliminado");
+                    Limpiar();
+                }
+
+                else
+                {
+                    toast.ShowError("Error al eliminar el registro.");
+                }
+            }
+
+            private void Limpiar()
+            {
+                this.cobros = new Cobros();
+                this.CobroId = 0;
+            }
+
+            private async void SourceDTO(List<CobrosDetalles> detalle)
+            {
+                foreach (var item in detalle)
+                {
+                    var venta = await ventasBLL.Buscar(item.VentaId);
+                    var cliente = await clientesBLL.Buscar(venta.ClienteId);
+
+                    var dto = new
+                    {
+                        item.CobroId,
+                        item.VentaId,
+                        venta.Fecha,
+                        venta.Monto,
+                        venta.Balance,
+                        item.Cobrado
+                    };
+                }
+            }
+
+            private void SourceDTO(CobrosDetalles detalle, Ventas venta)
+            {
+                var dto = new
+                {
+                    detalle.CobroId,
+                    detalle.VentaId,
+                    venta.Fecha,
+                    venta.Monto,
+                    venta.Balance,
+                    detalle.Cobrado
+
+                };
+            }
+
+            private async void ListadeCobros()
+            {
+                listVenta = await ventasBLL.GetList(c => c.ClienteId == cobros.ClienteId && c.CobroNoPerdiente == true);
+            }
+
+            private void CotejoCobrar(CobrosDetalles cobrodetalles)
+            {
+                if (cobrodetalles.Cobrado == 0)
+                {
+                    cobrodetalles.Cobrado = cobrodetalles.Venta.Balance;
+                    cobros.TotalesCobro += cobrodetalles.Cobrado;
+                    cobros.ConteoCobro++;
+                }
+                else
+                {
+                    cobrodetalles.Cobrado = 0;
+                    cobros.TotalesCobro -= cobrodetalles.Venta.Balance;
+                    cobros.ConteoCobro--;
+                }
+            }
+
+            private async Task BuscarVentasCobradas()
+            {
+                if (CobroId > 0)
+                {
+                    var cobrado = await cobrosBLL.Buscar(CobroId);
+
+                    if (cobrado != null)
+                    {
+                        cobrado.cobrosDetalles = await ventasBLL.GetVentasPagada(cobrado.ClienteId);
+                        this.cobros = cobrado;
+
+                    }
+                    else
+                    {
+                        toast.ShowError("El cobro no existe");
+                    }
+                }
+            } }
