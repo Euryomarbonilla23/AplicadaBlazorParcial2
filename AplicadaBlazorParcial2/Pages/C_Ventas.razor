@@ -1,10 +1,6 @@
 ﻿@page "/C_Ventas"
 @inject IToastService toast
 
-@using Blazored.Toast.Services
-@using AplicadaBlazorParcial2.Models
-@using AplicadaBlazorParcial2.BLL
-
 <div class="container shadow-lg p-3 rb-5 bg-white rounded col-md-16">
     <div class="card-img">
         <div class="card-header">
@@ -65,13 +61,14 @@
                         <tbody class="bg-white">
                             @foreach (var item in VentaList)
                             {
-                <tr>
-                    <td>@item.VentaId</td>
-                    <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
-                    <td>@item.ClienteId</td>
-                    <td>@item.Monto</td>
-                    <td>@item.Balance</td>
-                </tr>}
+                                <tr>
+                                    <td>@item.VentaId</td>
+                                    <td>@item.Fecha.ToString("dd/MM/yyyy")</td>
+                                    <td>@item.ClienteId</td>
+                                    <td>@item.Monto</td>
+                                    <td>@item.Balance</td>
+                                </tr>
+                            }
                         </tbody>
                     </table>
                 </div>
@@ -84,83 +81,86 @@
 </div>
 
 @code
-{ [Inject]
-            private VentasBLL ventasBLL { get; set; }
+{
 
-            public List<Ventas> VentaList { get; set; }
+    [Inject]
+    private VentasBLL ventasBLL { get; set; }
 
-            public string Filtro { get; set; }
-            private string FiltroFecha { get; set; }
+    public List<Ventas> VentaList { get; set; }
 
-            public string Criterio { get; set; }
+    public string Filtro { get; set; }
+    private string FiltroFecha { get; set; }
 
-            private DateTime Desde { get; set; } = DateTime.Now;
-            private DateTime Hasta { get; set; } = DateTime.Now;
+    public string Criterio { get; set; }
 
-            private void Nuevo()
-            {
-                VentaList = new List<Ventas>();
-                Filtro = "0";
-                Criterio = string.Empty;
-            }
+    private DateTime Desde { get; set; } = DateTime.Now;
+    private DateTime Hasta { get; set; } = DateTime.Now;
 
-            protected override void OnInitialized()
-            {
-                Nuevo();
-            }
+    private void Nuevo()
+    {
+        VentaList = new List<Ventas>();
+        Filtro = "0";
+        Criterio = string.Empty;
+    }
 
-            public async void Consultar()
-            {
-                int id;
-                float monto;
-                float balance;
-                int.TryParse(Criterio, out id);
-                float.TryParse(Criterio, out monto);
-                float.TryParse(Criterio, out balance);
-                switch (Filtro)
+    protected override void OnInitialized()
+    {
+        Nuevo();
+    }
+
+    public async void Consultar()
+    {
+        int id;
+        float monto;
+        float balance;
+        int.TryParse(Criterio, out id);
+        float.TryParse(Criterio, out monto);
+        float.TryParse(Criterio, out balance);
+        switch (Filtro)
+        {
+            case "0": //Todo
+                VentaList = await ventasBLL.GetList(c => true);
+                break;
+            case "1":
+                if (Criterio.Trim().Length > 0)
                 {
-                    case "0": //Todo
-                        VentaList = await ventasBLL.GetList(c => true);
-                        break;
-                    case "1":
-                        if (Criterio.Trim().Length > 0)
-                        {
-                            try
-                            {
-                                VentaList = await ventasBLL.GetList(c => c.VentaId == id);
-                            }
-                            catch (FormatException)
-                            {
-                                toast.ShowWarning("Ingrese un numero");
-                            }
-                        }
-                        else
-                        {
-                            VentaList = await ventasBLL.GetList(c => true);
-                        }
-                        break;
-                    case "2":
-                        if (Criterio.Trim().Length > 0)
-                        {
-                            VentaList = await ventasBLL.GetList(c => c.Monto == monto);
-                        }
-                        break;
-                    case "3":
-                        if (Criterio.Trim().Length > 0)
-                        {
-                            VentaList = await ventasBLL.GetList(c => c.Balance == balance);
-                        }
-                        break;
-
+                    try
+                    {
+                        VentaList = await ventasBLL.GetList(c => c.VentaId == id);
+                    }
+                    catch (FormatException)
+                    {
+                        toast.ShowWarning("Ingrese un numero");
+                    }
                 }
-
-                switch (FiltroFecha)
+                else
                 {
-                    case "0": //Nada
-                        break;
-                    case "1": //Fecha
-                        VentaList = VentaList.Where(s => s.Fecha >= Desde && s.Fecha <= Hasta).ToList();
-                        break;
-
+                    VentaList = await ventasBLL.GetList(c => true);
                 }
-            } }
+                break;
+            case "2":
+                if(Criterio.Trim().Length > 0)
+                {
+                    VentaList = await ventasBLL.GetList(c => c.Monto == monto);
+                }
+                break;
+            case "3":
+                if (Criterio.Trim().Length > 0)
+                {
+                    VentaList = await ventasBLL.GetList(c => c.Balance == balance);
+                }
+                break;
+
+        }
+
+        switch (FiltroFecha)
+        {
+            case "0": //Nada
+                break;
+            case "1": //Fecha
+                VentaList = VentaList.Where(s => s.Fecha >= Desde && s.Fecha <= Hasta).ToList();
+                break;
+
+        }
+    }
+}

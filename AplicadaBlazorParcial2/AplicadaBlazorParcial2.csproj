@@ -1,23 +1,23 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+	  <StartWorkinkDirectory>$(MSBuildProjectDirectory)</StartWorkinkDirectory>
+	  <TargetFramework>net5.0</TargetFramework>
   </PropertyGroup>
 
   <ItemGroup>
-    <Folder Include="Data\" />
-    <Folder Include="DAL\" />
-    <Folder Include="BLL\" />
-    <Folder Include="Models\" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="blazored.toast" Version="3.1.2" />
-    <PackageReference Include="microsoft.entityframeworkcore.sqlite" Version="5.0.7" />
-    <PackageReference Include="microsoft.entityframeworkcore.tools" Version="5.0.7">
+    <PackageReference Include="Blazored.Toast" Version="3.1.2" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SQLite" Version="5.0.4" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="5.0.4">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Data\D2Cobros.db">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

@@ -1,6 +1,6 @@
 using AplicadaBlazorParcial2.BLL;
 using AplicadaBlazorParcial2.DAL;
-
+using AplicadaBlazorParcial2.Data;
 using Blazored.Toast;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Components;
@@ -32,14 +32,16 @@ namespace AplicadaBlazorParcial2
         {
             services.AddRazorPages();
             services.AddServerSideBlazor();
-            //BlazordToast.
-            services.AddBlazoredToast();
+            services.AddSingleton<WeatherForecastService>();
 
-            //contexto.
+            //Se inyecto el contexto.
             services.AddDbContext<Contexto>(option =>
             option.UseSqlite(Configuration.GetConnectionString("DefaultConnection")));
 
-            //las BLL
+            //Se inyecto BlazordToast.
+            services.AddBlazoredToast();
+
+            //Se inyectaron las BLL
             services.AddTransient<ClientesBLL>();
             services.AddTransient<VentasBLL>();
             services.AddTransient<CobrosBLL>();
