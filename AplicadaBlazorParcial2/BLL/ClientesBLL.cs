@@ -23,7 +23,6 @@ namespace AplicadaBlazorParcial2.BLL
 
             try
             {
-
                 clientes = await contexto.Clientes
                    .Where(p => p.ClienteId == id)
                    .AsNoTracking()
@@ -51,7 +50,6 @@ namespace AplicadaBlazorParcial2.BLL
 
                 throw;
             }
-
             return lista;
         }
 
@@ -68,7 +66,6 @@ namespace AplicadaBlazorParcial2.BLL
 
                 throw;
             }
-
             return lista;
         }
     }
